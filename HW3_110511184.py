@@ -8,7 +8,6 @@ from sklearn.model_selection import KFold
 import numpy as np
 from sklearn.svm import OneClassSVM
 from sklearn.cluster import KMeans
-from sklearn.metrics import roc_auc_score
 from tqdm import tqdm
 
 # Define file paths
@@ -187,3 +186,27 @@ submission = pd.DataFrame({'id': range(len(reconstruction_errors)), 'outliers': 
 submission.to_csv(submission_file_path, index=False)
 
 print("Submission saved successfully.")
+
+# Additional methods
+
+# Method 1 - OneClass SVM
+print("Training OneClass SVM...")
+oc_svm = OneClassSVM(kernel='rbf', gamma='scale')
+oc_svm.fit(X_train)
+oc_svm_scores = -oc_svm.decision_function(X_test)
+
+# Method 2 - KMeans
+print("Training KMeans...")
+kmeans = KMeans(n_clusters=6, random_state=42)
+kmeans.fit(X_train)
+kmeans_distances = kmeans.transform(X_test).min(axis=1)
+
+# Combine results
+print("Combining results...")
+combined_scores = (reconstruction_errors + oc_svm_scores + kmeans_distances) / 3
+
+# Save combined predictions
+submission_combined = pd.DataFrame({'id': range(len(combined_scores)), 'outliers': combined_scores})
+submission_combined.to_csv('submission_combined.csv', index=False)
+
+print("Combined submission saved successfully.")
